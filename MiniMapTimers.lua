@@ -1,3 +1,44 @@
+local version = "0.1"
+
+--[[
+    Mini Map Timers v0.1
+
+    updated by MLStudio for patch 4.20 and the new summoner's rift
+
+]]--    
+
+
+
+local AUTOUPDATE = true
+local UPDATE_SCRIPT_NAME = "MiniMapTimers"
+local UPDATE_HOST = "raw.github.com"
+local UPDATE_PATH = "/MLStudio/BoL/master/MiniMapTimers.lua"
+local UPDATE_FILE_PATH = SCRIPT_PATH..GetCurrentEnv().FILE_NAME
+local UPDATE_URL = "https://"..UPDATE_HOST..UPDATE_PATH
+
+function AutoupdaterMsg(msg) print("<font color=\"#6699ff\"><b>MiniMapTimers:</b></font> <font color=\"#FFFFFF\">"..msg..".</font>") end
+if AUTOUPDATE then
+    local ServerData = GetWebResult(UPDATE_HOST, UPDATE_PATH)
+    if ServerData then
+        PrintChat(tostring(ServerData))
+        local ServerVersion = string.match(ServerData, "local version = \"%d+.%d+\"")
+        ServerVersion = string.match(ServerVersion and ServerVersion or "", "%d+.%d+")
+        if ServerVersion then
+            ServerVersion = tonumber(ServerVersion)
+            if tonumber(version) < ServerVersion then
+                AutoupdaterMsg("New version available"..ServerVersion)
+                AutoupdaterMsg("Updating, please don't press F9")
+                DelayAction(function() DownloadFile(UPDATE_URL, UPDATE_FILE_PATH, function () AutoupdaterMsg("Successfully updated. ("..version.." => "..ServerVersion.."), press F9 twice to load the updated version.") end) end, 3)
+            else
+                AutoupdaterMsg("You have got the latest version ("..ServerVersion..")")
+            end
+        end
+    else
+        AutoupdaterMsg("Error downloading version info")
+    end
+end
+
+
 --[[updated by MLStudio for patch 4.20 and the new summoner's rift]]
 
 do
@@ -824,10 +865,10 @@ local campInit = false
 						DrawText(camp.drawText,16,camp.minimap.x - 9, camp.minimap.y - 5, camp.drawColor)
 						if MMTConfig.textOnMap and camp.object and camp.object.valid then
 							PrintFloatText(camp.object,6,camp.floatText)
-							DrawText3D(camp.floatText,camp.object.x,camp.object.y,camp.object.z+50,40,TARGB({255,255,0,0}),true)
+							DrawText3D(camp.floatText,camp.object.x,camp.object.y,camp.object.z+50,40,ARGB(255,255,0,0),true)
 						elseif camp.object == nil and camp.pos~= nil then
 							--PrintChat("Camp.object is nil!")
-							DrawText3D(camp.floatText,camp.pos.x,camp.pos.y,camp.pos.z,40,TARGB({255,255,0,0}),true)
+							DrawText3D(camp.floatText,camp.pos.x,camp.pos.y,camp.pos.z,40,ARGB(255,255,0,0),true)
 						end
 					end
 				end
