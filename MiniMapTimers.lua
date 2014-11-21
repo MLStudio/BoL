@@ -1,7 +1,7 @@
-local version = "0.1"
+local version = "0.2"
 
 --[[
-    Mini Map Timers v0.1
+    Mini Map Timers v0.2
 
     updated by MLStudio for patch 4.20 and the new summoner's rift
 
@@ -116,7 +116,7 @@ do
 			{	-- wolves
 				name = "murkwolves", --old wolves
 				spawn = 115,
-				respawn = 50,
+				respawn = 100,
 				advise = false,
 				camps = {
 					{
@@ -134,7 +134,7 @@ do
 			{	-- wraiths
 				name = "razorbeaks", --old wraithes
 				spawn = 115,
-				respawn = 50,
+				respawn = 100,
 				advise = false,
 				camps = {
 					{
@@ -153,7 +153,7 @@ do
 			{	-- GreatWraiths
 				name = "Gromp", --Used to be great wraiths
 				spawn = 115,
-				respawn = 50,
+				respawn = 100,
 				advise = false,
 				camps = {
 					{
@@ -171,7 +171,7 @@ do
 			{	-- Golems
 				name = "Krugs",
 				spawn = 115,
-				respawn = 50,
+				respawn = 100,
 				advise = false,
 				camps = {
 					{
