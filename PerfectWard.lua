@@ -204,7 +204,7 @@ local packetApiAvailable = false
 -- Code ------------------------------------------------------------------------
 
 function OnLoad()
-    PrintChat(" >> Perfect Ward 1.7.3")
+    PrintChat(" >> Perfect Ward v0.1")
 end
 
 function OnTick()
