@@ -99,12 +99,12 @@ do
 					{
 						--pos = { x = 6923, y = 60, z = 5469 },
 						name = "monsterCamp_3",
-						creeps = { { { name = "SRU_Razerbeak3.1.1" }, { name = "SRU_RazerbeakMini3.1.2" }, { name = "SRU_RazerbeakMini3.1.3" }, { name = "SRU_RazerbeakMini3.1.4" }, }, },
+						creeps = { { { name = "SRU_Razorbeak3.1.1" }, { name = "SRU_RazorbeakMini3.1.2" }, { name = "SRU_RazorbeakMini3.1.3" }, { name = "SRU_RazorbeakMini3.1.4" }, }, },
 						team = TEAM_BLUE,
 					},
 					{
 						name = "monsterCamp_9",
-						creeps = { { { name = "SRU_Razerbeak9.1.1" }, { name = "SRU_RazerbeakMini9.1.2" }, { name = "SRU_RazerbeakMini9.1.3" }, { name = "SRU_RazerbeakMini9.1.4" }, }, },
+						creeps = { { { name = "SRU_Razorbeak9.1.1" }, { name = "SRU_RazorbeakMini9.1.2" }, { name = "SRU_RazorbeakMini9.1.3" }, { name = "SRU_RazorbeakMini9.1.4" }, }, },
 						team = TEAM_RED,
 					},
 				},
@@ -410,7 +410,7 @@ do
 			for i,monster in pairs(monsters[mapName]) do  -- monster_camp init
 				for j,camp in pairs(monster.camps) do
 					if camp.name == object.name then
-						PrintChat(object.name) --setting monsterCamp
+						--PrintChat(object.name) --setting monsterCamp
 						camp.object = object
 						return
 					end
@@ -858,12 +858,12 @@ local campInit = false
 	end
 
 	function OnWndMsg(msg,key)
-		if msg == KEY_DOWN then
-			if key == 35 then
-				local current = monsters.summonerRift[6].camps[1].object
-				PrintChat("X: " .. tostring(current.x) .. ' ' .. current.name)
-			end
-		end
+		-- if msg == KEY_DOWN then
+		-- 	if key == 35 then
+		-- 		local current = monsters.summonerRift[6].camps[1].object
+		-- 		PrintChat("X: " .. tostring(current.x) .. ' ' .. current.name)
+		-- 	end
+		-- end
 		if msg == WM_LBUTTONDOWN and IsKeyDown(16) then
 			for i,monster in pairs(monsters[mapName]) do
 				if monster.isSeen == true then
