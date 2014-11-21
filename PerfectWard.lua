@@ -21,7 +21,7 @@ function AutoupdaterMsg(msg) print("<font color=\"#6699ff\"><b>Perfect Ward:</b>
 if AUTOUPDATE then
     local ServerData = GetWebResult(UPDATE_HOST, UPDATE_PATH)
     if ServerData then
-        PrintChat(tostring(ServerData))
+        --PrintChat(tostring(ServerData))
         local ServerVersion = string.match(ServerData, "local version = \"%d+.%d+\"")
         ServerVersion = string.match(ServerVersion and ServerVersion or "", "%d+.%d+")
         if ServerVersion then
