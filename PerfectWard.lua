@@ -1,3 +1,47 @@
+local version = "0.1"
+
+--[[
+    Perfect Ward v0.1, originally by Husky
+    ========================================================================
+
+    v0.1 -- First release for new SR
+
+]]--    
+
+
+
+local autoupdateenabled = true
+local UPDATE_SCRIPT_NAME = "PerfectWard"
+local UPDATE_HOST = "raw.github.com"
+local UPDATE_PATH = "/MLStudio/BoL/master/PerfectWard.lua"
+local UPDATE_FILE_PATH = SCRIPT_PATH..GetCurrentEnv().FILE_NAME
+local UPDATE_URL = "https://"..UPDATE_HOST..UPDATE_PATH
+
+local ServerData
+if autoupdateenabled then
+    GetAsyncWebResult(UPDATE_HOST, UPDATE_PATH, function(d) ServerData = d end)
+    function update()
+        if ServerData ~= nil then
+            local ServerVersion
+            local send, tmp, sstart = nil, string.find(ServerData, "local version = \"")
+            if sstart then
+                send, tmp = string.find(ServerData, "\"", sstart+1)
+            end
+            if send then
+                ServerVersion = tonumber(string.sub(ServerData, sstart+1, send-1))
+            end
+
+            if ServerVersion ~= nil and tonumber(ServerVersion) ~= nil and tonumber(ServerVersion) > tonumber(version) then
+                DownloadFile(UPDATE_URL.."?nocache"..myHero.charName..os.clock(), UPDATE_FILE_PATH, function () print("<font color=\"#FF0000\"><b>"..UPDATE_SCRIPT_NAME..":</b> successfully updated. Reload (double F9) Please. ("..version.." => "..ServerVersion..")</font>") end)     
+            elseif ServerVersion then
+                print("<font color=\"#FF0000\"><b>"..UPDATE_SCRIPT_NAME..":</b> You have got the latest version: <u><b>"..ServerVersion.."</b></u></font>")
+            end     
+            ServerData = nil
+        end
+    end
+    AddTickCallback(update)
+end
+
 --[[
     Perfect Ward v0.1, originally by Husky
     ========================================================================
@@ -320,7 +364,7 @@ function OnDraw()
 
         for i,wardSpot in pairs(safeWardSpots) do
             local wardColor  = (GetDistance(wardSpot.magneticSpot, mousePos) <= 100) and 0x00FF00 or 0xFFFFFF
-            local arrowColor = (GetDistance(wardSpot.magneticSpot, mousePos) <= 100) and TARGB({255,0,255,0}) or TARGB({255,255,255,255})
+            local arrowColor = (GetDistance(wardSpot.magneticSpot, mousePos) <= 100) and ARGB(255,0,255,0) or ARGB(255,255,255,255)
 
             local x, y, onScreen = get2DFrom3D(wardSpot.magneticSpot.x, wardSpot.magneticSpot.y, wardSpot.magneticSpot.z)
             if onScreen then
