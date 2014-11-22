@@ -1,4 +1,4 @@
-local version = "0.2"
+local version = "0.21"
 
 --[[
     Mini Map Timers v0.2
@@ -175,6 +175,24 @@ do
 				advise = false,
 				camps = {
 					{
+						name = "monsterCamp_15",
+						creeps = { { { name = "Sru_Crab15.1.1" }, }, },
+						team = TEAM_BLUE,
+					},
+					{
+						name = "monsterCamp_16",
+						creeps = { { { name = "Sru_Crab16.1.1" }, }, },
+						team = TEAM_RED,
+					},
+				},
+			},
+			{	-- ScuttleBug
+				name = "ScuttleBug",
+				spawn = 150,
+				respawn = 180,
+				advise = false,
+				camps = {
+					{
 						name = "monsterCamp_5",
 						creeps = { { { name = "SRU_Krug5.1.2" }, { name = "SRU_KrugMini5.1.1" }, }, },
 						team = TEAM_BLUE,
@@ -187,6 +205,7 @@ do
 				},
 			},
 		},
+
 		twistedTreeline = {
 			{	-- Wraith
 				name = "Wraith",
