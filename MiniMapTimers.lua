@@ -1,4 +1,4 @@
-local version = "0.21"
+local version = "0.22"
 
 --[[
     Mini Map Timers v0.2
@@ -452,16 +452,17 @@ do
 
 	function addCampCreepAltar(object)
 		if object ~= nil and object.name ~= nil then
-			if object.name == "Order_Inhibit_Gem.troy" or object.name == "Chaos_Inhibit_Gem.troy" then --if inhibitor is alive, then add to list of inhibitors
+			if object.name == "sruap_order_inhibitor_idle.troy" or object.name == "sruap_chaos_inhibitor_idle.troy" then --if inhibitor is alive, then add to list of inhibitors
 				table.insert(inhibitors, { object = object, destroyed = false, lefttime = 0, x = object.x, y = object.y, z = object.z, minimap = GetMinimap(object), textTick = 0 })
 				return
-			elseif object.name == "Order_Inhibit_Crystal_Shatter.troy" or object.name == "Chaos_Inhibit_Crystal_Shatter.troy" then  --if inhibitor destroyed, then mark as destroyed
+			elseif object.name == "SRU_Order_Inhibitor_explosion.troy" or object.name == "SRU_Chaos_Inhibitor_explosion.troy" or object.name:lower():find("explosion") then  --if inhibitor destroyed, then mark as destroyed
+				PrintChat(object.name)
 				for i,inhibitor in pairs(inhibitors) do
 					if GetDistance(inhibitor, object) < 200 then
 						local tick = GetTickCount()
 						inhibitor.dtime = tick
-						inhibitor.rtime = tick + 240000
-						inhibitor.ltime = 240000
+						inhibitor.rtime = tick + 300000
+						inhibitor.ltime = 300000
 						inhibitor.destroyed = true
 					end
 				end
@@ -781,7 +782,7 @@ local campInit = false
 					if MMTConfig.textOnMap and altar.object and altar.object.valid and altar.textTick < GetTickCount() and altar.floatText ~= altar.drawText then
 						altar.floatText = altar.drawText
 						altar.textTick = GetTickCount() + 1000
-						PrintFloatText(altar.object,6,altar.floatText)
+						--PrintFloatText(altar.object,6,altar.floatText)
 					end
 				end
 			end
@@ -863,7 +864,10 @@ local campInit = false
 					--inhibitor.drawText = (IsKeyDown(16) and TimerText(inhibitor.rtime) or TimerText(inhibitor.rtime))
 					if MMTConfig.textOnMap and inhibitor.textTick < tick then
 						inhibitor.textTick = tick + 1000
-						PrintFloatText(inhibitor.object,6,inhibitor.drawText)
+						--PrintFloatText(inhibitor.object,6,inhibitor.drawText)
+					end
+					if MMTConfig.textOnMap then
+						--PrintFloatText(inhibitor.object,6,inhibitor.drawText)
 					end
 				end
 			end
@@ -913,6 +917,9 @@ local campInit = false
 		for i,inhibitor in pairs(inhibitors) do
 			if inhibitor.destroyed == true then
 				DrawText(inhibitor.drawText,16,inhibitor.minimap.x - 9, inhibitor.minimap.y - 5, 0xFFFFFF00)
+				if MMTConfig.textOnMap then
+					DrawText3D(inhibitor.drawText,inhibitor.object.x,inhibitor.object.y,inhibitor.object.z-100,40,ARGB(255,255,0,0),true)
+				end
 			end
 		end
 	end
