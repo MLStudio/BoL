@@ -1,4 +1,4 @@
-local version = "0.2"
+local version = "0.21"
 
 
 if myHero.charName ~= "Kalista" then return end
@@ -52,15 +52,19 @@ tSize = math.floor(WINDOW_H/35 + 0.5)
 local x = math.floor(WINDOW_W * 0.2 + 0.5)
 local y = math.floor(WINDOW_H * 0.015 + 0.5)
 local debugMSG = ""
-
+local ts = nil
+local tsE = nil
 local SpellRangedQ = {Range = 1450, Speed = 1800, Delay = 0.2, Width = 50}
 
 
 function Menu()
 	ts = TargetSelector(TARGET_LESS_CAST_PRIORITY, SpellRangedQ.Range, DAMAGE_PHYSICAL)
 	ts.name = "Ranged Main"
+	tsE = TargetSelector(TARGET_LESS_CAST_PRIORITY, 1000, DAMAGE_PHYSICAL)
+	tsE.name = "E Target"
 	Config = scriptConfig("Kalista", "Kalista")
 	Config:addTS(ts)
+	Config:addTS(tsE)
 	Config:addParam("Combo", "Combo", SCRIPT_PARAM_ONKEYDOWN, false, 32)
     Config:addParam("Harass", "Harass", SCRIPT_PARAM_ONKEYDOWN, false, string.byte('C'))
     Config:addParam("ks", "KS with E", SCRIPT_PARAM_ONOFF, true)
@@ -97,6 +101,7 @@ end
 
 function OnTick()
 	ts:update()
+	tsE:update()
 	local Elvl = myHero:GetSpellData(_E).level
 
 	debugMSG = "debug: "
@@ -173,18 +178,10 @@ function Combo()
 	end
 
 	for i, current in pairs(enemyHeroes) do
+		local targets = tsE.target
 
-		if target ~= nil and current.object.name == target.name then
-			--PrintChat("Object matches target")
-			if Config.ComboSub.autoE and myHero:CanUseSpell(_E) == READY and current.stack >= Config.ComboSub.autoEStacks then
-				if Config.Extra.packetCast and VIP_USER then
-					packetCast(_E)
-				else
-					CastSpell(_E)
-				end
-			end
-
-			if Config.ComboSub.autoERange and myHero:CanUseSpell(_E) == READY and ValidTarget(current.object,1000) and current.stack > 0 then
+		if targets ~= nil and targets == current.object then
+			if Config.ComboSub.autoERange and myHero:CanUseSpell(_E) == READY and ValidTarget(current.object,1000) and current.stack > 1 then
 				local Position, HitChance = VP:GetPredictedPos(current.object, 0.5)
 				--PrintChat("Position Predicted: " .. tostring(Position.x) .. ", " .. tostring(Position.z))
 				local myPosition, myHitChance = VP:GetPredictedPos(myHero,0.5)
@@ -202,7 +199,41 @@ function Combo()
 						CastSpell(_E)
 					end
 				end
+			end	
+		end
+	end
+			
+
+	for i, current in pairs(enemyHeroes) do
+		if target ~= nil and current.object.name == target.name then
+			--PrintChat("Object matches target")
+			if Config.ComboSub.autoE and myHero:CanUseSpell(_E) == READY and current.stack >= Config.ComboSub.autoEStacks then
+				if Config.Extra.packetCast and VIP_USER then
+					packetCast(_E)
+				else
+					CastSpell(_E)
+				end
 			end
+
+			-- if Config.ComboSub.autoERange and myHero:CanUseSpell(_E) == READY and ValidTarget(current.object,1000) and current.stack > 1 then
+			-- 	local Position, HitChance = VP:GetPredictedPos(current.object, 0.5)
+			-- 	--PrintChat("Position Predicted: " .. tostring(Position.x) .. ", " .. tostring(Position.z))
+			-- 	local myPosition, myHitChance = VP:GetPredictedPos(myHero,0.5)
+			-- 	if Config.Extra.debug then
+			-- 		debugMSG = debugMSG .. "\nPredicted Distance: " .. tostring(GetDistance(Position,myPosition)) .. "\n"
+			-- 		--PrintChat("Predicted distance: " .. GetDistance(Position,myPosition))
+			-- 	end
+			-- 	if GetDistance(Position,myPosition) >= 1000 then
+			-- 		if Config.Extra.debug then
+			-- 			PrintChat("Leaving range!")
+			-- 		end
+			-- 		if Config.Extra.packetCast and VIP_USER then
+			-- 			packetCast(_E)
+			-- 		else
+			-- 			CastSpell(_E)
+			-- 		end
+			-- 	end
+			-- end
 		end
 	end
 end
@@ -222,18 +253,10 @@ function Harass()
 	end
 
 	for i, current in pairs(enemyHeroes) do
+		local targets = tsE.target
 
-		if target ~= nil and current.object.name == target.name then
-			--PrintChat("Object matches target")
-			if Config.HarassSub.autoE and myHero:CanUseSpell(_E) == READY and current.stack >= Config.HarassSub.autoEStacks then
-				if Config.Extra.packetCast and VIP_USER then
-					packetCast(_E)
-				else
-					CastSpell(_E)
-				end
-			end
-
-			if Config.HarassSub.autoERange and myHero:CanUseSpell(_E) == READY and ValidTarget(current.object,1000) and current.stack > 0 then
+		if targets ~= nil and targets == current.object then
+			if Config.HarassSub.autoERange and myHero:CanUseSpell(_E) == READY and ValidTarget(current.object,1000) and current.stack > 1 then
 				local Position, HitChance = VP:GetPredictedPos(current.object, 0.5)
 				--PrintChat("Position Predicted: " .. tostring(Position.x) .. ", " .. tostring(Position.z))
 				local myPosition, myHitChance = VP:GetPredictedPos(myHero,0.5)
@@ -252,6 +275,41 @@ function Harass()
 					end
 				end
 			end
+		end
+	end
+
+
+	for i, current in pairs(enemyHeroes) do
+
+		if target ~= nil and current.object.name == target.name then
+			--PrintChat("Object matches target")
+			if Config.HarassSub.autoE and myHero:CanUseSpell(_E) == READY and current.stack >= Config.HarassSub.autoEStacks then
+				if Config.Extra.packetCast and VIP_USER then
+					packetCast(_E)
+				else
+					CastSpell(_E)
+				end
+			end
+
+			-- if Config.HarassSub.autoERange and myHero:CanUseSpell(_E) == READY and ValidTarget(current.object,1000) and current.stack > 1 then
+			-- 	local Position, HitChance = VP:GetPredictedPos(current.object, 0.5)
+			-- 	--PrintChat("Position Predicted: " .. tostring(Position.x) .. ", " .. tostring(Position.z))
+			-- 	local myPosition, myHitChance = VP:GetPredictedPos(myHero,0.5)
+			-- 	if Config.Extra.debug then
+			-- 		debugMSG = debugMSG .. "\nPredicted Distance: " .. tostring(GetDistance(Position,myPosition)) .. "\n"
+			-- 		--PrintChat("Predicted distance: " .. GetDistance(Position,myPosition))
+			-- 	end
+			-- 	if GetDistance(Position,myPosition) >= 1000 then
+			-- 		if Config.Extra.debug then
+			-- 			PrintChat("Leaving range!")
+			-- 		end
+			-- 		if Config.Extra.packetCast and VIP_USER then
+			-- 			packetCast(_E)
+			-- 		else
+			-- 			CastSpell(_E)
+			-- 		end
+			-- 	end
+			-- end
 		end
 	end
 
