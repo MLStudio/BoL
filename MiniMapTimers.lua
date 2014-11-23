@@ -1,4 +1,4 @@
-local version = "0.3"
+local version = "0.31"
 
 --[[
     Mini Map Timers v0.3
@@ -154,7 +154,7 @@ do
 				name = "Gromp", --Used to be great wraiths
 				spawn = 115,
 				respawn = 100,
-				advise = true,
+				advise = false,
 				camps = {
 					{
 						name = "monsterCamp_13",
