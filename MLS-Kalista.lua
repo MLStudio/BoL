@@ -1,10 +1,13 @@
-local version = "0.1"
+local version = "0.2"
 
+
+if myHero.charName ~= "Kalista" then return end
 --[[
 
 MLStudio's Kalista v0.1 beta
 
 v0.1 -- First release
+v0.2 -- More accurate E dmg calculation and VIP_USER check
 
 --]]
 
@@ -110,16 +113,21 @@ function OnTick()
 	if Config.ks then
 		for i, target in pairs(enemyHeroes) do
 			if ValidTarget(target.object, 1000) and target.stack > 0 then
-				local dmg = getDmg("E", target.object, myHero, 3) 
-				dmg = dmg * (1.25 + (Elvl -1)* 0.05)^(target.stack-1)
-				dmg = dmg * 0.90
+				-- local dmg = getDmg("E", target.object, myHero, 3) 
+				-- dmg = dmg * (1.25 + (Elvl -1)* 0.05)^(target.stack-1)
+				-- dmg = dmg * 0.90
+				local dmg = eDmgCalc(target.object,target.stack)
 				if Config.Extra.debug then
 					debugMSG = debugMSG .. "First dmg: " .. tostring(getDmg("E", target.object, myHero, 1)) .. " Second dmg: " .. tostring(getDmg("E", target.object, myHero, 2)*target.stack) 
 					.. " Third dmg: " .. tostring(getDmg("E", target.object, myHero, 3)) .. "\nE lvl: " .. tostring(Elvl)
 				end
 				if target.stack > 0 then
 					if target.object.health <= dmg then 
-						CastSpell(_E)
+						if Config.Extra.packetCast and VIP_USER then
+							packetCast(_E)
+						else
+							CastSpell(_E)
+						end
 					end
 				end
 			end
@@ -134,13 +142,29 @@ function OnTick()
 	end
 end
 
+function eDmgCalc(unit, stacks)
+	local first = {
+		dmg = {20, 30, 40, 50, 60},
+		scaling = .60
+	}
+	local adds = {
+		dmg = {5, 9, 14, 20, 27},
+		scaling = {.15, .18, .21, .24, .27}
+	}
+	if unit and stacks > 0 then
+		local mainDmg  = first.dmg[myHero:GetSpellData(_E).level] + (first.scaling * myHero.totalDamage)
+		local extraDmg = (stacks > 1 and (adds.dmg[myHero:GetSpellData(_E).level] + (adds.scaling[myHero:GetSpellData(_E).level] * myHero.totalDamage)) * (stacks - 1)) or 0
+		return myHero:CalcDamage(unit, (mainDmg + extraDmg))
+	end
+end
+
 function Combo()
 	local target = ts.target
 	if target ~= nil and ValidTarget(target,1500) and myHero:CanUseSpell(_Q) == READY and Config.ComboSub.useQ then
 		local castPos, HitChance, Position = VP:GetLineCastPosition(target, 0.2, 50, 1450, 1800, myHero, true)
 		if castPos ~= nil and GetDistance(castPos)<SpellRangedQ.Range and HitChance > 0 then
 			--PrintChat("castPos x: " .. tostring(castPos.x) .. " castPos z: " .. tostring(castPos.z))
-			if Config.Extra.packetCast then
+			if Config.Extra.packetCast and VIP_USER then
 				packetCast(_Q, castPos.x, castPos.z)
 			else
 				CastSpell(_Q, castPos.x, castPos.z)
@@ -153,7 +177,7 @@ function Combo()
 		if target ~= nil and current.object.name == target.name then
 			--PrintChat("Object matches target")
 			if Config.ComboSub.autoE and myHero:CanUseSpell(_E) == READY and current.stack >= Config.ComboSub.autoEStacks then
-				if Config.Extra.packetCast then
+				if Config.Extra.packetCast and VIP_USER then
 					packetCast(_E)
 				else
 					CastSpell(_E)
@@ -172,7 +196,7 @@ function Combo()
 					if Config.Extra.debug then
 						PrintChat("Leaving range!")
 					end
-					if Config.Extra.packetCast then
+					if Config.Extra.packetCast and VIP_USER then
 						packetCast(_E)
 					else
 						CastSpell(_E)
@@ -189,7 +213,7 @@ function Harass()
 		local castPos, HitChance, Position = VP:GetLineCastPosition(target, 0.2, 50, 1450, 1800, myHero, true)
 		if castPos ~= nil and GetDistance(castPos)<SpellRangedQ.Range and HitChance > 0 then
 			--PrintChat("castPos x: " .. tostring(castPos.x) .. " castPos z: " .. tostring(castPos.z))
-			if Config.Extra.packetCast then
+			if Config.Extra.packetCast and VIP_USER then
 				packetCast(_Q, castPos.x, castPos.z)
 			else
 				CastSpell(_Q, castPos.x, castPos.z)
@@ -202,7 +226,7 @@ function Harass()
 		if target ~= nil and current.object.name == target.name then
 			--PrintChat("Object matches target")
 			if Config.HarassSub.autoE and myHero:CanUseSpell(_E) == READY and current.stack >= Config.HarassSub.autoEStacks then
-				if Config.Extra.packetCast then
+				if Config.Extra.packetCast and VIP_USER then
 					packetCast(_E)
 				else
 					CastSpell(_E)
@@ -221,7 +245,7 @@ function Harass()
 					if Config.Extra.debug then
 						PrintChat("Leaving range!")
 					end
-					if Config.Extra.packetCast then
+					if Config.Extra.packetCast and VIP_USER then
 						packetCast(_E)
 					else
 						CastSpell(_E)
