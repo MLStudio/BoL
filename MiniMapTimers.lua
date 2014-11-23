@@ -1,7 +1,7 @@
-local version = "0.22"
+local version = "0.3"
 
 --[[
-    Mini Map Timers v0.2
+    Mini Map Timers v0.3
 
     updated by MLStudio for patch 4.20 and the new summoner's rift
 
@@ -154,7 +154,7 @@ do
 				name = "Gromp", --Used to be great wraiths
 				spawn = 115,
 				respawn = 100,
-				advise = false,
+				advise = true,
 				camps = {
 					{
 						name = "monsterCamp_13",
@@ -456,10 +456,11 @@ do
 				table.insert(inhibitors, { object = object, destroyed = false, lefttime = 0, x = object.x, y = object.y, z = object.z, minimap = GetMinimap(object), textTick = 0 })
 				return
 			elseif object.name == "SRU_Order_Inhibitor_explosion.troy" or object.name == "SRU_Chaos_Inhibitor_explosion.troy" or object.name:lower():find("explosion") then  --if inhibitor destroyed, then mark as destroyed
-				PrintChat(object.name)
+				--PrintChat(object.name)
 				for i,inhibitor in pairs(inhibitors) do
 					if GetDistance(inhibitor, object) < 200 then
-						local tick = GetTickCount()
+						--local tick = GetTickCount()
+						local tick = GetGameTimer()*1000
 						inhibitor.dtime = tick
 						inhibitor.rtime = tick + 300000
 						inhibitor.ltime = 300000
@@ -561,7 +562,7 @@ UpdateWindow()
 tSize = math.floor(WINDOW_H/35 + 0.5)
 local x = math.floor(WINDOW_W * 0.2 + 0.5)
 local y = math.floor(WINDOW_H * 0.015 + 0.5)
-local campInit = false
+local campInit = true
 
 	function OnLoad()
 		mapName = GetGame().map.shortName
@@ -575,7 +576,8 @@ local campInit = false
 		else
 			startTick = GetGame().tick
 			-- CONFIG
-			MMTConfig = scriptConfig("Timers 0.2", "minimapTimers")
+			local scriptName = "Timers " .. tostring(version)
+			MMTConfig = scriptConfig(scriptName, "minimapTimers")
 			MMTConfig:addParam("pingOnRespawn", "Ping on respawn", SCRIPT_PARAM_ONOFF, true) -- ping location on respawn
 			MMTConfig:addParam("pingOnRespawnBefore", "Ping before respawn", SCRIPT_PARAM_ONOFF, true) -- ping location before respawn
 			MMTConfig:addParam("textOnRespawn", "Chat on respawn", SCRIPT_PARAM_ONOFF, true) -- print chat text on respawn
@@ -619,7 +621,8 @@ local campInit = false
 			end
 		end
 		if GetGame().isOver then return end
-		local GameTime = (GetTickCount()-startTick) / 1000
+		-- local GameTime = (GetTickCount()-startTick) / 1000
+		local GameTime = GetGameTimer()
 		local monsterCount = 0
 		for i,monster in pairs(monsters[mapName]) do --name = baron level
 			for j,camp in pairs(monster.camps) do --monster_camp# level
@@ -710,11 +713,11 @@ local campInit = false
 						if monster.advise == true and (MMTConfig.adviceTheirMonsters == true or camp.enemyTeam == false) then
 							if secondLeft == 0 and camp.advised == false then
 								camp.advised = true --just spawned so printchat alert
-								if MMTConfig.textOnRespawn then PrintChat("<font color='#00FFCC'>"..(camp.enemyTeam and "Their " or "Our ")..monster.name.."</font><font color='#FFAA00'> has respawned</font>") end
+								if MMTConfig.textOnRespawn then PrintChat("<font color=\"#FFFFFF\">"..(camp.enemyTeam and "Their " or "Our ")..monster.name.." has respawned" .. ".</font>") end
 								if MMTConfig.pingOnRespawn then PingSignal(PING_FALLBACK,camp.object.x,camp.object.y,camp.object.z,2) end
 							elseif secondLeft <= MMTConfig.adviceBefore and camp.advisedBefore == false then
 								camp.advisedBefore = true --20 seconds before so printchat alert
-								if MMTConfig.textOnRespawnBefore then PrintChat("<font color='#00FFCC'>"..(camp.enemyTeam and "Their " or "Our ")..monster.name.."</font><font color='#FFAA00'> respawns in </font><font color='#00FFCC'>"..secondLeft.." sec</font>") end
+								if MMTConfig.textOnRespawnBefore then PrintChat("<font color=\"#FFFFFF\">" .. (camp.enemyTeam and "Their " or "Our ") .. monster.name .. " respawns in ".. tostring(secondLeft) .. ".</font>") end
 								if MMTConfig.pingOnRespawnBefore then PingSignal(PING_FALLBACK,camp.object.x,camp.object.y,camp.object.z,2) end
 							end
 						end
@@ -733,15 +736,24 @@ local campInit = false
 				if IsKeyDown(16) and camp.status == 4 then
 					camp.drawText = " "..(camp.respawnTime ~= nil and TimerText(camp.respawnTime) or "")
 					camp.textUnder = (CursorIsUnder(camp.minimap.x - 9, camp.minimap.y - 5, 20, 8))
+					camp.textUnder = camp.textUnder or GetDistance(camp.object, mousePos) < 200
 				else
 					camp.textUnder = false
 				end
+
+				if IsKeyDown(16) and camp.status ~= 4 then
+					camp.startTimer = (CursorIsUnder(camp.minimap.x - 9, camp.minimap.y - 5, 20, 8))
+					camp.startTimer = camp.startTimer or GetDistance(camp.object, mousePos) < 200
+				else
+					camp.startTimer = false
+				end
+
 				if MMTConfig.textOnMap and camp.status == 4 and camp.object and camp.object.valid and camp.textTick < GetTickCount() and camp.floatText ~= camp.drawText then
 					camp.floatText = camp.drawText
 
 					--PrintChat(camp.floatText)
 					camp.textTick = GetTickCount() + 1000 --update every second drawing directly on map
-					PrintFloatText(camp.object,6,camp.floatText)
+					--PrintFloatText(camp.object,6,camp.floatText)
 
 				end
 			end
@@ -855,11 +867,12 @@ local campInit = false
 		-- inhib
 		for i,inhibitor in pairs(inhibitors) do
 			if inhibitor.destroyed then
-				local tick = GetTickCount()
+				-- local tick = GetTickCount()
+				local tick = GetGameTimer() * 1000
 				if inhibitor.rtime < tick then
 					inhibitor.destroyed = false --inhibitor has respawned
 				else
-					inhibitor.ltime = (inhibitor.rtime - GetTickCount()) / 1000;
+					inhibitor.ltime = (inhibitor.rtime - tick) / 1000;
 					inhibitor.drawText = TimerText(inhibitor.ltime)
 					--inhibitor.drawText = (IsKeyDown(16) and TimerText(inhibitor.rtime) or TimerText(inhibitor.rtime))
 					if MMTConfig.textOnMap and inhibitor.textTick < tick then
@@ -887,7 +900,7 @@ local campInit = false
 					elseif camp.status == 4 then
 						DrawText(camp.drawText,16,camp.minimap.x - 9, camp.minimap.y - 5, camp.drawColor)
 						if MMTConfig.textOnMap and camp.object and camp.object.valid then
-							PrintFloatText(camp.object,6,camp.floatText)
+							-- PrintFloatText(camp.object,6,camp.floatText)
 							DrawText3D(camp.floatText,camp.object.x,camp.object.y,camp.object.z+50,40,ARGB(255,255,0,0),true)
 						elseif camp.object == nil and camp.pos~= nil then
 							--PrintChat("Camp.object is nil!")
@@ -946,7 +959,28 @@ local campInit = false
 						end
 					end
 				end
+
+				for j,camp in pairs(monster.camps) do
+					if camp.startTimer then
+						monster.isSeen = true
+						camp.status = 4
+						camp.advisedBefore = false
+						camp.advised = false
+						camp.respawnTime = math.floor(GetGameTimer()) + monster.respawn --we set its fresh respawn time
+						if monster.name == "dragon" or monster.name == "baron" then --if it is dragon or baron
+							camp.respawnText = TimerText(camp.respawnTime).. --format respawntime as timer
+							(monster.name == "baron" and " baron" or " d")
+						elseif monster.name == "blue" or monster.name == "red" then
+							camp.respawnText = TimerText(camp.respawnTime)..
+							(camp.enemyTeam and " t" or " o")..(monster.name == "red" and "r" or "b")
+						else
+							camp.respawnText = (camp.enemyTeam and "Their " or "Our ")..
+							monster.name.." respawn at "..TimerText(camp.respawnTime)
+						end
+					end
+				end
 			end
+
 			for i,altar in pairs(altars[mapName]) do
 				if altar.locked and altar.textUnder then
 					if altar.unlockText ~= nil then SendChat(""..altar.unlockText) end
