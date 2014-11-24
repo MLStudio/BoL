@@ -1,4 +1,4 @@
-local version = "0.31"
+local version = "0.32"
 
 --[[
     Mini Map Timers v0.3
@@ -50,6 +50,7 @@ do
 				spawn = 900,
 				respawn = 420,
 				advise = true,
+				sendChat = true,
 				camps = {
 					{
 						pos = { x = 4960, y = 60, z = 10420 },
@@ -64,6 +65,7 @@ do
 				spawn = 150,
 				respawn = 360,
 				advise = true,
+				sendChat = true,
 				camps = {
 					{
 						pos = { x = 9846, y = 60, z = 4449 },
@@ -78,6 +80,7 @@ do
 				spawn = 115,
 				respawn = 300,
 				advise = true,
+				sendChat = true,
 				camps = {
 					{
 						pos = { x = 3873, y = 60, z = 8007 },
@@ -98,6 +101,7 @@ do
 				spawn = 115,
 				respawn = 300,
 				advise = true,
+				sendChat = true,
 				camps = {
 					{
 						pos = { x = 7832, y = 60, z = 4173 },
@@ -175,13 +179,13 @@ do
 				advise = false,
 				camps = {
 					{
-						name = "monsterCamp_15",
-						creeps = { { { name = "Sru_Crab15.1.1" }, }, },
+						name = "monsterCamp_5",
+						creeps = { { { name = "SRU_Krug5.1.2" }, { name = "SRU_KrugMini5.1.1" }, }, },
 						team = TEAM_BLUE,
 					},
 					{
-						name = "monsterCamp_16",
-						creeps = { { { name = "Sru_Crab16.1.1" }, }, },
+						name = "monsterCamp_11",
+						creeps = { { { name = "SRU_Krug11.1.2" }, { name = "SRU_KrugMini11.1.1" }, }, },
 						team = TEAM_RED,
 					},
 				},
@@ -193,13 +197,13 @@ do
 				advise = false,
 				camps = {
 					{
-						name = "monsterCamp_5",
-						creeps = { { { name = "SRU_Krug5.1.2" }, { name = "SRU_KrugMini5.1.1" }, }, },
+						name = "monsterCamp_15",
+						creeps = { { { name = "Sru_Crab15.1.1" }, }, },
 						team = TEAM_BLUE,
 					},
 					{
-						name = "monsterCamp_11",
-						creeps = { { { name = "SRU_Krug11.1.2" }, { name = "SRU_KrugMini11.1.1" }, }, },
+						name = "monsterCamp_16",
+						creeps = { { { name = "Sru_Crab16.1.1" }, }, },
 						team = TEAM_RED,
 					},
 				},
@@ -460,7 +464,7 @@ do
 				for i,inhibitor in pairs(inhibitors) do
 					if GetDistance(inhibitor, object) < 200 then
 						--local tick = GetTickCount()
-						local tick = GetGameTimer()*1000
+						local tick = GetInGameTimer()*1000
 						inhibitor.dtime = tick
 						inhibitor.rtime = tick + 300000
 						inhibitor.ltime = 300000
@@ -563,6 +567,13 @@ tSize = math.floor(WINDOW_H/35 + 0.5)
 local x = math.floor(WINDOW_W * 0.2 + 0.5)
 local y = math.floor(WINDOW_H * 0.015 + 0.5)
 local campInit = true
+local msgTick = 0
+
+function round2(num, idp)
+	local mult = 10^(idp or 0)
+  	local answer = math.floor(num * mult + 0.5) / mult
+  	return tostring(answer)
+end
 
 	function OnLoad()
 		mapName = GetGame().map.shortName
@@ -578,13 +589,14 @@ local campInit = true
 			-- CONFIG
 			local scriptName = "Timers " .. tostring(version)
 			MMTConfig = scriptConfig(scriptName, "minimapTimers")
-			MMTConfig:addParam("pingOnRespawn", "Ping on respawn", SCRIPT_PARAM_ONOFF, true) -- ping location on respawn
-			MMTConfig:addParam("pingOnRespawnBefore", "Ping before respawn", SCRIPT_PARAM_ONOFF, true) -- ping location before respawn
+			MMTConfig:addParam("pingOnRespawn", "Ping on respawn", SCRIPT_PARAM_ONOFF, false) -- ping location on respawn
+			MMTConfig:addParam("pingOnRespawnBefore", "Ping before respawn", SCRIPT_PARAM_ONOFF, false) -- ping location before respawn
 			MMTConfig:addParam("textOnRespawn", "Chat on respawn", SCRIPT_PARAM_ONOFF, true) -- print chat text on respawn
 			MMTConfig:addParam("textOnRespawnBefore", "Chat before respawn", SCRIPT_PARAM_ONOFF, true) -- print chat text before respawn
-			MMTConfig:addParam("adviceTheirMonsters", "Advice enemy monster", SCRIPT_PARAM_ONOFF, true) -- advice enemy monster, or just our monsters
-			MMTConfig:addParam("adviceBefore", "Advice Time", SCRIPT_PARAM_SLICE, 20, 1, 40, 0) -- time in second to advice before monster respawn
+			MMTConfig:addParam("adviceTheirMonsters", "Give Chat Warning for Enemy Creeps", SCRIPT_PARAM_ONOFF, true) -- advice enemy monster, or just our monsters
+			MMTConfig:addParam("adviceBefore", "Chat Warning Time Interval", SCRIPT_PARAM_SLICE, 20, 1, 40, 0) -- time in second to advice before monster respawn
 			MMTConfig:addParam("textOnMap", "Text on map", SCRIPT_PARAM_ONOFF, true) -- time in second on map
+			MMTConfig:addParam("secondsMode","Give shift+click time in second", SCRIPT_PARAM_ONOFF, false)
 			for i,monster in pairs(monsters[mapName]) do
 				monster.isSeen = false
 				for j,camp in pairs(monster.camps) do  --initialize starting values
@@ -622,7 +634,7 @@ local campInit = true
 		end
 		if GetGame().isOver then return end
 		-- local GameTime = (GetTickCount()-startTick) / 1000
-		local GameTime = GetGameTimer()
+		local GameTime = GetInGameTimer()
 		local monsterCount = 0
 		for i,monster in pairs(monsters[mapName]) do --name = baron level
 			for j,camp in pairs(monster.camps) do --monster_camp# level
@@ -669,14 +681,38 @@ local campInit = true
 							camp.advised = false
 							camp.respawnTime = math.floor(GameTime) + monster.respawn --we set its fresh respawn time
 							if monster.name == "dragon" or monster.name == "baron" then --if it is dragon or baron
-								camp.respawnText = TimerText(camp.respawnTime).. --format respawntime as timer
-								(monster.name == "baron" and " baron" or " d")
+								if MMTConfig.secondsMode == false then
+									camp.respawnText = TimerText(camp.respawnTime) ..--format respawntime as timer
+									(monster.name == "baron" and " baron" or " dragon")
+								else
+									camp.respawnText = round2(camp.respawnTime-GameTime,-1) .. ' seconds' .. 
+									(monster.name == "baron" and " baron" or " dragon")
+								end
+
 							elseif monster.name == "blue" or monster.name == "red" then
-								camp.respawnText = TimerText(camp.respawnTime)..
-								(camp.enemyTeam and " t" or " o")..(monster.name == "red" and "r" or "b")
+								if MMTConfig.secondsMode == false then
+									camp.respawnText = TimerText(camp.respawnTime)..
+									(camp.enemyTeam and " t" or " o")..(monster.name == "red" and "r" or "b")
+								else
+									camp.respawnText = round2(camp.respawnTime-GameTime,-1).. ' seconds' ..
+									(camp.enemyTeam and " t" or " o")..(monster.name == "red" and "r" or "b")
+								end
+							elseif monster.name == "ScuttleBug" then
+								if MMTConfig.secondsMode == false then
+									camp.respawnText = TimerText(camp.respawnTime)..
+									(camp.team == TEAM_BLUE and " dragon " or " baron ") .. monster.name
+								else
+									camp.respawnText = round2(camp.respawnTime-GameTime,-1).. ' seconds' ..
+									(camp.team == TEAM_BLUE and " dragon " or " baron ") .. monster.name
+								end
 							else
-								camp.respawnText = (camp.enemyTeam and "Their " or "Our ")..
-								monster.name.." respawn at "..TimerText(camp.respawnTime)
+								if MMTConfig.secondsMode == false then
+									camp.respawnText = (camp.enemyTeam and "Their " or "Our ")..
+									monster.name.." respawn at "..TimerText(camp.respawnTime)
+								else
+									camp.respawnText = round2(camp.respawnTime-GameTime,-1) .. ' seconds '..
+									(camp.enemyTeam and "their " or "our ") .. monster.name
+								end
 							end
 						elseif (camp.status == 4) then --this condition means we already knew camp was dead and will set temp variable to 4
 							campStatus = 4
@@ -737,6 +773,41 @@ local campInit = true
 					camp.drawText = " "..(camp.respawnTime ~= nil and TimerText(camp.respawnTime) or "")
 					camp.textUnder = (CursorIsUnder(camp.minimap.x - 9, camp.minimap.y - 5, 20, 8))
 					camp.textUnder = camp.textUnder or GetDistance(camp.object, mousePos) < 200
+
+					if monster.name == "dragon" or monster.name == "baron" then --if it is dragon or baron
+						if MMTConfig.secondsMode == false or camp.respawnTime - GameTime > 60 then
+							camp.respawnText = TimerText(camp.respawnTime) ..--format respawntime as timer
+							(monster.name == "baron" and " baron" or " dragon")
+						else
+							camp.respawnText = round2(camp.respawnTime-GameTime,-1) .. ' seconds' .. 
+							(monster.name == "baron" and " baron" or " dragon")
+						end
+
+					elseif monster.name == "blue" or monster.name == "red" then
+						if MMTConfig.secondsMode == false then
+							camp.respawnText = TimerText(camp.respawnTime)..
+							(camp.enemyTeam and " t" or " o")..(monster.name == "red" and "r" or "b")
+						else
+							camp.respawnText = round2(camp.respawnTime-GameTime,-1).. ' seconds' ..
+							(camp.enemyTeam and " t" or " o")..(monster.name == "red" and "r" or "b")
+						end
+					elseif monster.name == "ScuttleBug" then
+						if MMTConfig.secondsMode == false then
+							camp.respawnText = TimerText(camp.respawnTime)..
+							(camp.team == TEAM_BLUE and " dragon " or " baron ") .. monster.name
+						else
+							camp.respawnText = round2(camp.respawnTime-GameTime,-1).. ' seconds' ..
+							(camp.team == TEAM_BLUE and " dragon " or " baron ") .. monster.name
+						end
+					else
+						if MMTConfig.secondsMode == false then
+							camp.respawnText = (camp.enemyTeam and "Their " or "Our ")..
+							monster.name.." respawn at "..TimerText(camp.respawnTime)
+						else
+							camp.respawnText = round2(camp.respawnTime-GameTime,-1) .. ' seconds '..
+							(camp.enemyTeam and "their " or "our ") .. monster.name
+						end
+					end
 				else
 					camp.textUnder = false
 				end
@@ -868,7 +939,7 @@ local campInit = true
 		for i,inhibitor in pairs(inhibitors) do
 			if inhibitor.destroyed then
 				-- local tick = GetTickCount()
-				local tick = GetGameTimer() * 1000
+				local tick = GetInGameTimer() * 1000
 				if inhibitor.rtime < tick then
 					inhibitor.destroyed = false --inhibitor has respawned
 				else
@@ -889,7 +960,8 @@ local campInit = true
 
 	function OnDraw()
 		if GetGame().isOver then return end
-
+		--debugText = tostring(GetInGameTimer())
+		--debugText = debugText .. '\n' .. TimerText(GetInGameTimer())
 		DrawText(debugText,tSize,x,y,0xFFFF0000)
 
 		for i,monster in pairs(monsters[mapName]) do
@@ -944,6 +1016,7 @@ local campInit = true
 		-- 		PrintChat("X: " .. tostring(current.x) .. ' ' .. current.name)
 		-- 	end
 		-- end
+		local GameTime = GetInGameTimer()
 		if msg == WM_LBUTTONDOWN and IsKeyDown(16) then
 			for i,monster in pairs(monsters[mapName]) do
 				if monster.isSeen == true then
@@ -952,7 +1025,7 @@ local campInit = true
 						break
 					else
 						for j,camp in pairs(monster.camps) do
-							if camp.textUnder then
+							if camp.textUnder and monster.sendChat then
 								if camp.respawnText ~= nil then SendChat(""..camp.respawnText) end
 								break
 							end
@@ -966,16 +1039,40 @@ local campInit = true
 						camp.status = 4
 						camp.advisedBefore = false
 						camp.advised = false
-						camp.respawnTime = math.floor(GetGameTimer()) + monster.respawn --we set its fresh respawn time
+						camp.respawnTime = math.floor(GetInGameTimer()) + monster.respawn --we set its fresh respawn time
 						if monster.name == "dragon" or monster.name == "baron" then --if it is dragon or baron
-							camp.respawnText = TimerText(camp.respawnTime).. --format respawntime as timer
-							(monster.name == "baron" and " baron" or " d")
+							if MMTConfig.secondsMode == false then
+								camp.respawnText = TimerText(camp.respawnTime)..--format respawntime as timer
+								(monster.name == "baron" and " baron" or " dragon")
+							else
+								camp.respawnText = round2(camp.respawnTime-GameTime,-1) .. ' seconds' .. 
+								(monster.name == "baron" and " baron" or " dragon")
+							end
+
 						elseif monster.name == "blue" or monster.name == "red" then
-							camp.respawnText = TimerText(camp.respawnTime)..
-							(camp.enemyTeam and " t" or " o")..(monster.name == "red" and "r" or "b")
+							if MMTConfig.secondsMode == false then
+								camp.respawnText = TimerText(camp.respawnTime)..
+								(camp.enemyTeam and " t" or " o")..(monster.name == "red" and "r" or "b")
+							else
+								camp.respawnText = round2(camp.respawnTime-GameTime,-1).. ' seconds' ..
+								(camp.enemyTeam and " t" or " o")..(monster.name == "red" and "r" or "b")
+							end
+						elseif monster.name == "ScuttleBug" then
+							if MMTConfig.secondsMode == false then
+								camp.respawnText = TimerText(camp.respawnTime)..
+								(camp.team == TEAM_BLUE and " dragon " or " baron ") .. monster.name
+							else
+								camp.respawnText = round2(camp.respawnTime-GameTime,-1).. ' seconds' ..
+								(camp.team == TEAM_BLUE and " dragon " or " baron ") .. monster.name
+							end
 						else
-							camp.respawnText = (camp.enemyTeam and "Their " or "Our ")..
-							monster.name.." respawn at "..TimerText(camp.respawnTime)
+							if MMTConfig.secondsMode == false then
+								camp.respawnText = (camp.enemyTeam and "Their " or "Our ")..
+								monster.name.." respawn at "..TimerText(camp.respawnTime)
+							else
+								camp.respawnText = round2(camp.respawnTime-GameTime,-1) .. ' seconds '..
+								(camp.enemyTeam and "their " or "our ") .. monster.name
+							end
 						end
 					end
 				end
