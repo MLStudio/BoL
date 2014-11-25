@@ -1,4 +1,4 @@
-local version = "0.32"
+local version = "0.33"
 
 --[[
     Mini Map Timers v0.3
@@ -485,6 +485,7 @@ do
 							for l,creep in ipairs(creepPack) do
 								if object.name == creep.name or object.name:find(creep.name) then
 									creep.object = object  --set the creep list object to actual object in game
+									camp.manual = false
 									return
 								end
 							end
@@ -569,10 +570,34 @@ local y = math.floor(WINDOW_H * 0.015 + 0.5)
 local campInit = true
 local msgTick = 0
 
+local dumpFile = LIB_PATH.."miniMapDump.csv"
+local dump = {}
+local record = false
+
 function round2(num, idp)
 	local mult = 10^(idp or 0)
   	local answer = math.floor(num * mult + 0.5) / mult
   	return tostring(answer)
+end
+
+function saveToFile()
+	local file = io.open(dumpFile, "w")
+	file:write("Camp Name,Camp Status, Camp Manual, Camp Object, Camp Respawn Time,Camp isSeen\n")
+	for i,monster in pairs(monsters[mapName]) do --name = baron level
+		for j,camp in pairs(monster.camps) do
+			local campObject = false
+			for k,creepPack in ipairs(camp.creeps) do
+				for l,creep in ipairs(creepPack) do
+					if creep.object then
+						campObject = true
+					end
+				end
+			end
+
+			file:write(monster.name .. ', '.. tostring(camp.status) ..', ' .. tostring(camp.manual) .. ', '.. tostring(campObject) .. ', ' .. tostring(camp.respawnTime) .. ', ' .. tostring(monster.isSeen) .. '\n')
+		end
+	end
+	file:close()
 end
 
 	function OnLoad()
@@ -618,47 +643,94 @@ end
 		end
 	end
 	function OnTick()
-		if campInit == false then
-			local negativeFound = false
-			for i,monster in pairs(monsters[mapName]) do --name = baron level
-				for j,camp in pairs(monster.camps) do
-					if camp == nil then
-						negativeFound = true
-					end
-				end
-			end
-			if negativeFound == false then
-				campInit = true
-				PrintChat("fully initialized!!")
-			end
-		end
+		-- if campInit == false then
+		-- 	local negativeFound = false
+		-- 	for i,monster in pairs(monsters[mapName]) do --name = baron level
+		-- 		for j,camp in pairs(monster.camps) do
+		-- 			if camp == nil then
+		-- 				negativeFound = true
+		-- 			end
+		-- 		end
+		-- 	end
+		-- 	if negativeFound == false then
+		-- 		campInit = true
+		-- 		PrintChat("fully initialized!!")
+		-- 	end
+		-- end
 		if GetGame().isOver then return end
 		-- local GameTime = (GetTickCount()-startTick) / 1000
 		local GameTime = GetInGameTimer()
 		local monsterCount = 0
 		for i,monster in pairs(monsters[mapName]) do --name = baron level
 			for j,camp in pairs(monster.camps) do --monster_camp# level
-				if campInit == false then
-					for j = 1, objManager.maxObjects do
-						local object = objManager:getObject(j)
-						if object ~= nil then
-							addCampCreepAltar(object)
-						end
-					end
-				end
+				-- if campInit == false then
+				-- 	for j = 1, objManager.maxObjects do
+				-- 		local object = objManager:getObject(j)
+				-- 		if object ~= nil then
+				-- 			addCampCreepAltar(object)
+				-- 		end
+				-- 	end
+				-- end
 
 				local campStatus = 0
-				for k,creepPack in ipairs(camp.creeps) do
-					for l,creep in ipairs(creepPack) do
-						if creep.object ~= nil and creep.object.valid and creep.object.dead == false then
-							if l == 1 then --first creep in creep pack
-								campStatus = 1 --creep is alive, set status 1
-							elseif campStatus ~= 1 then
-								campStatus = 2  --creep is alive, secondary creep set status as 2
+
+				if camp.manual then
+					for k,creepPack in ipairs(camp.creeps) do
+						for l,creep in ipairs(creepPack) do
+							if creep.object ~= nil and creep.object.valid and creep.object.dead == false and creep.object.visible then
+								camp.manual = false
+								if l == 1 then --first creep in creep pack
+									campStatus = 1 --creep is alive, set status 1
+								elseif campStatus ~= 1 then
+									campStatus = 2  --creep is alive, secondary creep set status as 2
+								end
+							end
+						end
+					end
+				else
+					for k,creepPack in ipairs(camp.creeps) do
+						for l,creep in ipairs(creepPack) do
+							if creep.object ~= nil and creep.object.valid and creep.object.dead == false then
+								if l == 1 then --first creep in creep pack
+									campStatus = 1 --creep is alive, set status 1
+								elseif campStatus ~= 1 then
+									campStatus = 2  --creep is alive, secondary creep set status as 2
+								end
 							end
 						end
 					end
 				end
+				-- if not camp.manual then
+				-- 	for k,creepPack in ipairs(camp.creeps) do
+				-- 		for l,creep in ipairs(creepPack) do
+				-- 			if creep.object ~= nil and creep.object.valid and creep.object.dead == false then
+				-- 				if l == 1 then --first creep in creep pack
+				-- 					campStatus = 1 --creep is alive, set status 1
+				-- 				elseif campStatus ~= 1 then
+				-- 					campStatus = 2  --creep is alive, secondary creep set status as 2
+				-- 				end
+				-- 			end
+				-- 		end
+				-- 	end
+				-- else
+				-- 	for k,creepPack in ipairs(camp.creeps) do
+				-- 		for l,creep in ipairs(creepPack) do
+				-- 			if creep.object ~= nil and creep.object.valid and creep.object.dead == false and creep.visible then
+				-- 				if l == 1 then --first creep in creep pack
+				-- 					campStatus = 1 --creep is alive, set status 1
+				-- 				elseif campStatus ~= 1 then
+				-- 					campStatus = 2  --creep is alive, secondary creep set status as 2
+				-- 				end
+				-- 			end
+				-- 		end
+				-- 	end
+				-- end
+
+				--[[Camp status so far:
+				1 means main creep alive
+				2 means only secondary creep alive
+
+				]]
 				--[[  Not used until camp.showOnMinimap work
 				if (camp.object and camp.object.showOnMinimap == 1) then
 				-- camp is here
@@ -812,7 +884,8 @@ end
 					camp.textUnder = false
 				end
 
-				if IsKeyDown(16) and camp.status ~= 4 then
+				--if IsKeyDown(16) and camp.status ~= 4 then
+				if IsKeyDown(16) and (camp.respawnTime == nil or GameTime > camp.respawnTime) then
 					camp.startTimer = (CursorIsUnder(camp.minimap.x - 9, camp.minimap.y - 5, 20, 8))
 					camp.startTimer = camp.startTimer or GetDistance(camp.object, mousePos) < 200
 				else
@@ -1017,6 +1090,12 @@ end
 		-- 	end
 		-- end
 		local GameTime = GetInGameTimer()
+
+		if msg == KEY_DOWN and key == 35 then
+			PrintChat("Saving")
+			saveToFile()
+		end
+
 		if msg == WM_LBUTTONDOWN and IsKeyDown(16) then
 			for i,monster in pairs(monsters[mapName]) do
 				if monster.isSeen == true then
@@ -1039,6 +1118,7 @@ end
 						camp.status = 4
 						camp.advisedBefore = false
 						camp.advised = false
+						camp.manual = true
 						camp.respawnTime = math.floor(GetInGameTimer()) + monster.respawn --we set its fresh respawn time
 						if monster.name == "dragon" or monster.name == "baron" then --if it is dragon or baron
 							if MMTConfig.secondsMode == false then
