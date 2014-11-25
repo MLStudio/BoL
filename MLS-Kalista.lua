@@ -1,4 +1,4 @@
-local version = "0.3"
+local version = "0.31"
 
 
 if myHero.charName ~= "Kalista" then return end
@@ -55,7 +55,7 @@ local y = math.floor(WINDOW_H * 0.015 + 0.5)
 local debugMSG = ""
 local ts = nil
 local tsE = nil
-local SpellRangedQ = {Range = 1450, Speed = 1800, Delay = 0.2, Width = 50}
+local SpellRangedQ = {Range = 1150, Speed = 1200, Delay = 0.4, Width = 30}
 
 local monsters = {
 	{	-- baron
@@ -142,7 +142,7 @@ function Menu()
 	Config:addTS(tsE)
 	Config:addParam("Combo", "Combo", SCRIPT_PARAM_ONKEYDOWN, false, 32)
     Config:addParam("Harass", "Harass", SCRIPT_PARAM_ONKEYDOWN, false, string.byte('C'))
-    Config:addParam("ks", "KS with E", SCRIPT_PARAM_ONOFF, true)
+    --Config:addParam("ks", "KS with E", SCRIPT_PARAM_ONOFF, true)
     Config:addSubMenu("Combo options", "ComboSub")
     Config:addSubMenu("Harass options", "HarassSub")
     Config:addSubMenu("KS options", "KSSub")
@@ -166,6 +166,7 @@ function Menu()
     -- Config.KSSub.creepList:addParam("dragon","Dragon", SCRIPT_PARAM_ONOFF, true)
     -- Config.KSSub.creepList:addParam("red","Red", SCRIPT_PARAM_ONOFF, true)
     -- Config.KSSub.creepList:addParam("blue","Blue", SCRIPT_PARAM_ONOFF, true)
+    Config.Draw:addParam("drawQ", "Draw Q Range", SCRIPT_PARAM_ONOFF, false)
     Config.Draw:addParam("drawE", "Draw E Range", SCRIPT_PARAM_ONOFF, true)
     Config.Extra:addParam("debug", "Debug Mode", SCRIPT_PARAM_ONOFF, false)
     Config.Extra:addParam("packetCast", "Packet Cast Spells", SCRIPT_PARAM_ONOFF, true)
@@ -504,6 +505,10 @@ function OnDraw()
 
 	if Config.Draw.drawE and myHero:CanUseSpell(_E) == READY then
 		DrawCircle(myHero.x, myHero.y, myHero.z, 1000, ARGB(200,17,17,17))
+	end
+
+	if Config.Draw.drawQ and myHero:CanUseSpell(_Q) == READY then
+		DrawCircle3D(myHero.x, myHero.y, myHero.z, 1150, 1, ARGB(100,0,255,0),100)
 	end
 
 end
