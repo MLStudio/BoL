@@ -1,5 +1,5 @@
-local version = "0.31"
-
+local version = "0.33"
+--local VIP_USER = false
 
 if myHero.charName ~= "Kalista" then return end
 --[[
@@ -42,11 +42,18 @@ if AUTOUPDATE then
 end
 
 if myHero.charName ~= "Kalista" then return end
-require 'VPrediction'
+
+if VIP_USER then
+	require 'VPrediction'
+	PrintChat("MLS-Kalista using vPrediction!")
+else
+	PrintChat("MLS-Kalista using free prediction!")
+end
 
 local enemyHeroes = {}
 local spellE = myHero:GetSpellData(_E)
 local VP = nil
+local TP = nil
 
 UpdateWindow()
 tSize = math.floor(WINDOW_H/35 + 0.5)
@@ -175,7 +182,12 @@ end
 
 function OnLoad()
 	Menu() --initialize Config Menu
-	VP = VPrediction()
+	if VIP_USER then
+		--PrintChat("Using Vprediction")
+		VP = VPrediction()
+	end
+	TP = TargetPrediction(1150, 1200, 0.46, 30, 100)
+
 
 	for i = 1, heroManager.iCount do --enemy table for keeping track of stacks of rend
         local hero = heroManager:GetHero(i)
@@ -244,6 +256,7 @@ function removeCreep(object)
 end
 
 local lastTick = 0
+
 function OnTick()
 	ts:update()
 	tsE:update()
@@ -348,14 +361,21 @@ end
 
 function Combo()
 	local target = ts.target
-	if target ~= nil and ValidTarget(target,1500) and myHero:CanUseSpell(_Q) == READY and Config.ComboSub.useQ then
-		local castPos, HitChance, Position = VP:GetLineCastPosition(target, 0.2, 50, 1450, 1800, myHero, true)
-		if castPos ~= nil and GetDistance(castPos)<SpellRangedQ.Range and HitChance > 0 then
-			--PrintChat("castPos x: " .. tostring(castPos.x) .. " castPos z: " .. tostring(castPos.z))
-			if Config.Extra.packetCast and VIP_USER then
-				packetCast(_Q, castPos.x, castPos.z)
-			else
-				CastSpell(_Q, castPos.x, castPos.z)
+	if target ~= nil and ValidTarget(target,1200) and myHero:CanUseSpell(_Q) == READY and Config.ComboSub.useQ then
+		if not VIP_USER then
+			local nextPos, minionCol, nextHealth = TP:GetPrediction(target)
+			if nextPos ~= nil and not minionCol then
+				CastSpell(_Q,nextPos.x, nextPos.z)
+			end
+		else
+			local castPos, HitChance, Position = VP:GetLineCastPosition(target, 0.46, 30, 1150, 1200, myHero, true)
+			if castPos ~= nil and GetDistance(castPos)<SpellRangedQ.Range and HitChance > 0 then
+				--PrintChat("castPos x: " .. tostring(castPos.x) .. " castPos z: " .. tostring(castPos.z))
+				if Config.Extra.packetCast and VIP_USER then
+					packetCast(_Q, castPos.x, castPos.z)
+				else
+					CastSpell(_Q, castPos.x, castPos.z)
+				end
 			end
 		end
 	end
@@ -364,10 +384,17 @@ function Combo()
 		local targets = tsE.target
 
 		if targets ~= nil and targets == current.object then
+			local Position, HitChance, myPosition, myHitChance = nil
+			local Position, minionCol, nextHealth, myPosition, minionCol, nextHealth   = nil
 			if Config.ComboSub.autoERange and myHero:CanUseSpell(_E) == READY and ValidTarget(current.object,1000) and current.stack > 1 then
-				local Position, HitChance = VP:GetPredictedPos(current.object, 0.5)
+				if VIP_USER then
+					Position, HitChance = VP:GetPredictedPos(current.object, 0.5)
 				--PrintChat("Position Predicted: " .. tostring(Position.x) .. ", " .. tostring(Position.z))
-				local myPosition, myHitChance = VP:GetPredictedPos(myHero,0.5)
+					myPosition, myHitChance = VP:GetPredictedPos(myHero,0.5)
+				else
+					Position, minionCol, nextHealth = TP:GetPrediction(target)
+					myPosition, minionCol, nextHealth = TP:GetPrediction(myHero)
+				end
 				if Config.Extra.debug then
 					debugMSG = debugMSG .. "\nPredicted Distance: " .. tostring(GetDistance(Position,myPosition)) .. "\n"
 					--PrintChat("Predicted distance: " .. GetDistance(Position,myPosition))
@@ -424,13 +451,20 @@ end
 function Harass()
 	local target = ts.target
 	if target ~= nil and ValidTarget(target,1500) and myHero:CanUseSpell(_Q) == READY and Config.HarassSub.useQ then
-		local castPos, HitChance, Position = VP:GetLineCastPosition(target, 0.2, 50, 1450, 1800, myHero, true)
-		if castPos ~= nil and GetDistance(castPos)<SpellRangedQ.Range and HitChance > 0 then
-			--PrintChat("castPos x: " .. tostring(castPos.x) .. " castPos z: " .. tostring(castPos.z))
-			if Config.Extra.packetCast and VIP_USER then
-				packetCast(_Q, castPos.x, castPos.z)
-			else
-				CastSpell(_Q, castPos.x, castPos.z)
+		if not VIP_USER then
+			local nextPos, minionCol, nextHealth = TP:GetPrediction(target)
+			if nextPos ~= nil and not minionCol then
+				CastSpell(_Q,nextPos.x, nextPos.z)
+			end
+		else
+			local castPos, HitChance, Position = VP:GetLineCastPosition(target, 0.46, 30, 1150, 1200, myHero, true)
+			if castPos ~= nil and GetDistance(castPos)<SpellRangedQ.Range and HitChance > 0 then
+				--PrintChat("castPos x: " .. tostring(castPos.x) .. " castPos z: " .. tostring(castPos.z))
+				if Config.Extra.packetCast and VIP_USER then
+					packetCast(_Q, castPos.x, castPos.z)
+				else
+					CastSpell(_Q, castPos.x, castPos.z)
+				end
 			end
 		end
 	end
@@ -439,10 +473,18 @@ function Harass()
 		local targets = tsE.target
 
 		if targets ~= nil and targets == current.object then
+			local Position, HitChance, myPosition, myHitChance = nil
+			local Position, minionCol, nextHealth, myPosition, minionCol, nextHealth   = nil
+
 			if Config.HarassSub.autoERange and myHero:CanUseSpell(_E) == READY and ValidTarget(current.object,1000) and current.stack > 1 then
-				local Position, HitChance = VP:GetPredictedPos(current.object, 0.5)
+				if VIP_USER then
+					Position, HitChance = VP:GetPredictedPos(current.object, 0.5)
 				--PrintChat("Position Predicted: " .. tostring(Position.x) .. ", " .. tostring(Position.z))
-				local myPosition, myHitChance = VP:GetPredictedPos(myHero,0.5)
+					myPosition, myHitChance = VP:GetPredictedPos(myHero,0.5)
+				else
+					Position, minionCol, nextHealth = TP:GetPrediction(target)
+					myPosition, minionCol, nextHealth = TP:GetPrediction(myHero)
+				end
 				if Config.Extra.debug then
 					debugMSG = debugMSG .. "\nPredicted Distance: " .. tostring(GetDistance(Position,myPosition)) .. "\n"
 					--PrintChat("Predicted distance: " .. GetDistance(Position,myPosition))
