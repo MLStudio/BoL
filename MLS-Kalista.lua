@@ -1,4 +1,4 @@
-local version = "0.33"
+local version = "0.4"
 --local VIP_USER = false
 
 if myHero.charName ~= "Kalista" then return end
@@ -9,6 +9,7 @@ MLStudio's Kalista v0.1 beta
 v0.1 -- First release
 v0.2 -- More accurate E dmg calculation and VIP_USER check
 v0.3 -- Added jungle steal with E
+v0.4 -- New stack tracker method
 
 --]]
 
@@ -285,7 +286,7 @@ function OnTick()
 			debugMSG = debugMSG .. target.object.charName .. ": " .. tostring(target.stack) ..'    ' .. tostring(GetGameTimer() - target.time) .. '\n'
 		end
 
-		if target.stack > 0 and (GetGameTimer() - target.time) > 3.5 then
+		if target.stack > 0 and (GetGameTimer() - target.time) > 4 then
 			target.stack = 0
 		end
 	end
@@ -555,44 +556,76 @@ function OnDraw()
 
 end
 
-function OnCreateObj(obj)
-	for i, target in pairs(enemyHeroes) do
-
- 		if GetDistance(target.object, obj) <80 then
- 			if obj.name == "Kalista_Base_E_Spear_tar6.troy" then
- 				if target.stack < 6 then
- 					target.stack = 6
- 				end
- 				target.time = GetGameTimer()
-
-		 	elseif obj.name == "Kalista_Base_E_Spear_tar5.troy" then
-		 		if target.stack < 6 then
- 					target.stack = 5
- 				end
-		 		target.time = GetGameTimer()
-		 	elseif obj.name == "Kalista_Base_E_Spear_tar4.troy" then
-		 		if target.stack < 6 then
- 					target.stack = 4
- 				end
-		 		target.time = GetGameTimer()
-		 	elseif obj.name == "Kalista_Base_E_Spear_tar3.troy" then
-		 		if target.stack < 6 then
- 					target.stack = 3
- 				end
-		 		target.time = GetGameTimer()
-		 	elseif obj.name == "Kalista_Base_E_Spear_tar2.troy" then
-		 		if target.stack < 6 then
- 					target.stack = 2
- 				end
-		 		target.time = GetGameTimer()
-		 	elseif obj.name == "Kalista_Base_E_Spear_tar1.troy" then
-		 		if target.stack < 6 then
- 					target.stack = 1
- 				end
-		 		target.time = GetGameTimer()
-		 	end
+function OnGainBuff(unit, buff)
+	if buff.source == myHero and buff.name == 'kalistaexpungemarker' then
+		for i, target in ipairs(enemyHeroes) do
+			if target.object == unit then
+				target.stack = 1
+				target.time = GetGameTimer()
+			end
 		end
 	end
+end
+
+function OnUpdateBuff(unit, buff)
+	if buff.source == myHero and buff.name == 'kalistaexpungemarker' then
+		for i, target in ipairs(enemyHeroes) do
+			if target.object == unit then
+				target.stack = target.stack + 1
+				target.time = GetGameTimer()
+			end
+		end
+	end
+end
+
+function OnLoseBuff(unit, buff)
+	if buff.name == 'kalistaexpungemarker' then
+		for i, target in ipairs(enemyHeroes) do
+			if target.object == unit then
+				target.stack = 0
+			end
+		end
+	end
+end
+
+function OnCreateObj(obj)
+	-- for i, target in pairs(enemyHeroes) do
+
+ -- 		if GetDistance(target.object, obj) <80 then
+ -- 			if obj.name == "Kalista_Base_E_Spear_tar6.troy" then
+ -- 				if target.stack < 6 then
+ -- 					target.stack = 6
+ -- 				end
+ -- 				target.time = GetGameTimer()
+
+	-- 	 	elseif obj.name == "Kalista_Base_E_Spear_tar5.troy" then
+	-- 	 		if target.stack < 6 then
+ -- 					target.stack = 5
+ -- 				end
+	-- 	 		target.time = GetGameTimer()
+	-- 	 	elseif obj.name == "Kalista_Base_E_Spear_tar4.troy" then
+	-- 	 		if target.stack < 6 then
+ -- 					target.stack = 4
+ -- 				end
+	-- 	 		target.time = GetGameTimer()
+	-- 	 	elseif obj.name == "Kalista_Base_E_Spear_tar3.troy" then
+	-- 	 		if target.stack < 6 then
+ -- 					target.stack = 3
+ -- 				end
+	-- 	 		target.time = GetGameTimer()
+	-- 	 	elseif obj.name == "Kalista_Base_E_Spear_tar2.troy" then
+	-- 	 		if target.stack < 6 then
+ -- 					target.stack = 2
+ -- 				end
+	-- 	 		target.time = GetGameTimer()
+	-- 	 	elseif obj.name == "Kalista_Base_E_Spear_tar1.troy" then
+	-- 	 		if target.stack < 6 then
+ -- 					target.stack = 1
+ -- 				end
+	-- 	 		target.time = GetGameTimer()
+	-- 	 	end
+	-- 	end
+	-- end
 
 	for i,monster in pairs(monsters) do --name = baron level
 		for j,camp in pairs(monster.camps) do
@@ -660,13 +693,13 @@ function OnProcessSpell(unit, spell)
         if spell.name:lower():find("attack") then
         	--PrintChat(spell.target.name)
         	--PrintChat(tostring(spell.windUpTime))
-        	for i, target in pairs(enemyHeroes) do
-        		if spell.target == target.object then
-        			if target.stack > 5 then
-        				DelayAction(function() target.stack = target.stack + 1 end,spell.windUpTime)
-        			end
-        		end
-        	end
+        	-- for i, target in pairs(enemyHeroes) do
+        	-- 	if spell.target == target.object then
+        	-- 		if target.stack > 5 then
+        	-- 			DelayAction(function() target.stack = target.stack + 1 end,spell.windUpTime)
+        	-- 		end
+        	-- 	end
+        	-- end
 
         	for i,monster in pairs(monsters) do --name = baron level
 				for j,camp in pairs(monster.camps) do
